@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 from docx import Document
-import argparse, os
+import argparse, os, time, sys
+
+WIN_SIZE = 200
+MIN_SIMILARITY = 0.9
 
 parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
 parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
 parser.add_argument("-f", dest="filePath", type=str)
 
 args = parser.parse_args()
-MIN_SIMILARITY = 0.8
+
 if args.filePath is not None:
     FILE_DEST = args.filePath 
 else:
@@ -34,17 +37,25 @@ def main():
     findHairpin(gene)
 
 
-#MUST be done in linear time
+# MUST be done in linear time
 def findHairpin(gene):
     genelen = len(gene)
     print(genelen)
+    start = time.time()
+    for i in range(genelen):
+        lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
+        percent = str(i * 100 / genelen) + "%"
+        sys.stdout.write("calculating:" + percent + "               \r")
+        sys.stdout.flush
+        
+    end = time.time()
+    print("time spent:" + end-start)
 
-
-#getstring similarity based on levenshtein distance
-#its similar to lcs algorithm
+# getstring similarity based on levenshtein distance
+# similar to lcs algorithm
 def strsim(str1, str2):
     similarity = levdist(str1, str2) * 1.0 / max(len(str1), len(str2))
-    return True if (1 - similarity) > MIN_SIMILARITY else False
+    return 1 - similarity
 
 
 def lcs(str1, str2):
@@ -57,7 +68,7 @@ def lcs(str1, str2):
             # TODO: mark best lcs and apply more DP for sliding window
             charmatch = 1 if str1[i-1] is str2[j-1] else 0
             dist[i][j] = max(dist[i-1][j], dist[i][j-1], dist[i-1][j-1] + charmatch)
-    
+ 
     return dist[len1-1][len2-1]
 
 
