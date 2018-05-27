@@ -7,7 +7,7 @@ parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
 parser.add_argument("-f", dest="filePath", type=str)
 
 args = parser.parse_args()
-MIN_SIMILARITY = 0.9
+MIN_SIMILARITY = 0.8
 if args.filePath is not None:
     FILE_DEST = args.filePath 
 else:
@@ -40,20 +40,39 @@ def findHairpin(gene):
     print(genelen)
 
 
-
 #getstring similarity based on levenshtein distance
 #its similar to lcs algorithm
 def strsim(str1, str2):
     similarity = levdist(str1, str2) * 1.0 / max(len(str1), len(str2))
-    return True if similarity > MIN_SIMILARITY else False
+    return True if (1 - similarity) > MIN_SIMILARITY else False
+
+
+def lcs(str1, str2):
+    len1 = len(str1)
+    len2 = len(str2)
+    dist = [[0 for x in range(len2)] for y in range(len1)]
+    for i in range(len1):
+        for j in range(len2): 
+            # Because index can loop back in python, theres no need to handle i=0 or j=0
+            # TODO: mark best lcs and apply more DP for sliding window
+            charmatch = 1 if str1[i-1] is str2[j-1] else 0
+            dist[i][j] = max(dist[i-1][j], dist[i][j-1], dist[i-1][j-1] + charmatch)
+    
+    return dist[len1-1][len2-1]
+
 
 def levdist(str1, str2):
     len1 = len(str1)
     len2 = len(str2)
     dist = [[0 for x in range(len2)] for y in range(len1)]
-#    for i in range(len1):
-#        for j in range(len2):
-            #TODO
+    for i in range(len1):
+        for j in range(len2):
+            if min(i, j) is 0:
+                dist[i][j] = max(i,j)
+            else:
+                charmismatch = 0 if str1[i] is str2[j] else 1
+                dist[i][j] = min(dist[i-1][j] + 1, dist[i][j-1] + 1, dist[i-1][j-1] + charmismatch)
+    return dist[len1-1][len2-1]
 
 
 if __name__ == "__main__":
