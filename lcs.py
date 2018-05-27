@@ -2,7 +2,7 @@
 from docx import Document
 import argparse, os, time, sys
 
-WIN_SIZE = 200
+WIN_SIZE = 250
 MIN_SIMILARITY = 0.9
 
 parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
@@ -18,7 +18,6 @@ else:
 
 def main():
     inputType = FILE_DEST[FILE_DEST.rfind('.'):]
-    print(FILE_DEST) 
     try:
         if args.txtInput:
             if inputType != ".txt":
@@ -40,16 +39,21 @@ def main():
 # MUST be done in linear time
 def findHairpin(gene):
     genelen = len(gene)
-    print(genelen)
+    print("gene length: "+str(genelen))
     start = time.time()
-    for i in range(genelen):
-        lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
+    maxout = None
+    for i in range(genelen-WIN_SIZE*2):
+        out = lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
         percent = str(i * 100 / genelen) + "%"
         sys.stdout.write("calculating:" + percent + "               \r")
         sys.stdout.flush
+        if maxout is None or maxout['length'] < out['length']:
+            maxout = out
+            
         
     end = time.time()
-    print("time spent:" + end-start)
+    print("time spent:" + str(round(end-start, 2)))
+    print(maxout)
 
 # getstring similarity based on levenshtein distance
 # similar to lcs algorithm
@@ -59,17 +63,26 @@ def strsim(str1, str2):
 
 
 def lcs(str1, str2):
+    retdic = {
+        'length' : 0,
+        'lcs1_start' : 0,
+        'lcs1_end' : 0,
+        'lcs2_start' : 0,
+        'lcs2_end' : 0
+        }
     len1 = len(str1)
     len2 = len(str2)
     dist = [[0 for x in range(len2)] for y in range(len1)]
     for i in range(len1):
         for j in range(len2): 
-            # Because index can loop back in python, theres no need to handle i=0 or j=0
             # TODO: mark best lcs and apply more DP for sliding window
-            charmatch = 1 if str1[i-1] is str2[j-1] else 0
-            dist[i][j] = max(dist[i-1][j], dist[i][j-1], dist[i-1][j-1] + charmatch)
- 
-    return dist[len1-1][len2-1]
+            if j is 0:
+                dist[i][j] = max(0, dist[i-1][j])
+            else:
+                charmatch = 1 if str1[i] == str2[j] else 0
+                dist[i][j] = max(dist[i-1][j], dist[i][j-1], dist[i-1][j-1] + charmatch)
+    retdic['length']=dist[len1-1][len2-1]
+    return retdic
 
 
 def levdist(str1, str2):
