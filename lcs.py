@@ -9,7 +9,7 @@ WIN_SIZE = 250
 MIN_SIMILARITY = 0.9
 
 # maximum length of addition or deletion
-MAX_ERR_LENTH = 4
+MAX_ERR_LENTH = 15
 
 # how many character must continuously match to make it valid lcs
 MIN_MATCH_LENGTH = 3
@@ -18,6 +18,9 @@ MIN_MATCH_LENGTH = 3
 # if found string is longer than this value, declare it as
 # hairpin string and print it
 MIN_LCS_LENTH = 50
+
+# if valid lcs isn't found, skip iteration to speed up process
+SKIP_DIST = 30
 
 parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
 parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
@@ -55,14 +58,27 @@ def findHairpin(gene):
     print("gene length: "+str(genelen))
     start = time.time()
     maxout = None
-    for i in range(genelen-WIN_SIZE*2):
+    i = 0
+    maxlen = 0
+    bestStr = ("", "")
+    while i < genelen-WIN_SIZE*2:
         out = lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
         percent = str(i * 100 / genelen) + "%"
         sys.stdout.write("calculating:" + percent + "               \r")
         sys.stdout.flush()
-        if maxout is None or maxout['length'] < out['length']:
-            maxout = out
-            
+        if out is not None:
+            if maxlen < max(out[1]-out[0], out[3]-out[2]):
+                maxlen = max(out[1]-out[0], out[3]-out[2])
+                bestStr = (gene[i+out[0]:i+out[1]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]])
+                i = i + 1
+            else:
+                print("LCS 1: " + bestStr[0])
+                print("LCS 2: " + bestStr[1])
+                i = i + WIN_SIZE
+                maxlen = 0
+                bestStr = ("","")
+        else:
+            i = i + SKIP_DIST
         
     end = time.time()
     print("time spent:" + str(round(end-start, 2)))
@@ -101,7 +117,7 @@ def lcs(str1, str2):
     for i in range(len1):
         for j in range(len2): 
             if j is 0:
-                dist[i][j] = max(0, dist[i-1][j]['length'])
+                dist[i][j] = {'length' : max(0, dist[i-1][j]['length']), 'from' : START, 'cont' : 0}
             else: 
                 # if dist[][] gets value from insertion or deletion, decrement its value by 1
                 # if str1[i] and str2[j] matches, restore decremented value
@@ -110,7 +126,7 @@ def lcs(str1, str2):
                 if str1[i] is str2[j]:
                     matchLength = {'length' : dist[i-1][j-1]['length'] + 1
                             , 'from' : FROM_MATCH
-                            , 'cont' : max(0, dist[i-1][j-1]) + 1
+                            , 'cont' : max(0, dist[i-1][j-1]['cont']) + 1
                             }
                 else:
                     # in this case, both of the checking string is from 1 index behind,
@@ -125,26 +141,28 @@ def lcs(str1, str2):
                     maxLength = dist[i][j]['length']
                     bestIndex = (i, j)
 
-    printLCS(dist, bestIndex)
+    if maxLength > MIN_LCS_LENTH:
+        return LCSindex(str1, str2, dist, bestIndex)
+    else:
+        return None
 
-
-def printLCS(dist, bestIndex):
+def LCSindex(str1, str2, dist, bestIndex):
     i = bestIndex[0]
     j = bestIndex[1]
-    str1 = ""
-    str2 = ""
-    #TODO
     while True:
+        lcsFrom = dist[i][j]['from']
+        if lcsFrom == FROM_I:
+            i = i - 1
+        elif lcsFrom == FROM_J:
+            j = j - 1
+        elif lcsFrom == FROM_MATCH:
+            i = i - 1
+            j = j - 1
 
-        if dist[i][j] is START:
+        if dist[i][j]['from'] is START:
             break
 
-        if dist[i][j] is FROM_I:
-            
-
-    # print in reversed order
-    print("First LCS: " + str1[::-1])
-    print("Second LCS: " + str2[::-1])
+    return(i, bestIndex[0] + 1, j, bestIndex[1] + 1)
 
 
 # finds the best LCS, using cont value as tiebreaker
@@ -168,7 +186,7 @@ def decrement(dist, src):
     
     # cont value, which is number of continous character that match,
     # must be over MIN_MATCH_LENGTH to be valid lcs    
-    if retcont < MIN_MATCH_LENGTH:
+    if retcont > 0 and retcont < MIN_MATCH_LENGTH:
         return DEFAULT_DIST
 
     # cont will be negative if character is mismatching several times in a row,
@@ -187,7 +205,7 @@ def levdist(str1, str2):
     len1 = len(str1)
     len2 = len(str2)
     dist = [[0 for x in range(len2)] for y in range(len1)]
-    for i in range(len1)
+    for i in range(len1):
         for j in range(len2):
             if min(i, j) is 0:
                 dist[i][j] = max(i,j)
