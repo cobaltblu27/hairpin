@@ -2,8 +2,19 @@
 from docx import Document
 import argparse, os, time, sys
 
+# size of the checking window
 WIN_SIZE = 250
+
+# used to checks similarity in two lcs(not currently used)
 MIN_SIMILARITY = 0.9
+
+# maximum length of addition or deletion
+MAX_ERR_LENTH = 4
+
+# minimum length of lcs string
+# if found string is longer than this value, declare it as
+# hairpin string and print it
+MIN_LCS_LENTH = 50
 
 parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
 parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
@@ -36,7 +47,6 @@ def main():
     findHairpin(gene)
 
 
-# MUST be done in linear time
 def findHairpin(gene):
     genelen = len(gene)
     print("gene length: "+str(genelen))
@@ -46,7 +56,7 @@ def findHairpin(gene):
         out = lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
         percent = str(i * 100 / genelen) + "%"
         sys.stdout.write("calculating:" + percent + "               \r")
-        sys.stdout.flush
+        sys.stdout.flush()
         if maxout is None or maxout['length'] < out['length']:
             maxout = out
             
@@ -62,34 +72,54 @@ def strsim(str1, str2):
     return 1 - similarity
 
 
+# to allow insertion and deletion while removing string with too big gaps, 
+# decrement dist[][] a little bit when common string is not continuing
 def lcs(str1, str2):
     retdic = {
         'length' : 0,
-        'lcs1_start' : 0,
-        'lcs1_end' : 0,
-        'lcs2_start' : 0,
-        'lcs2_end' : 0
+        'found' : False 
         }
     len1 = len(str1)
     len2 = len(str2)
+    index = [[0 for x in range(len2)] for y in range(len1)]
     dist = [[0 for x in range(len2)] for y in range(len1)]
     for i in range(len1):
         for j in range(len2): 
             # TODO: mark best lcs and apply more DP for sliding window
             if j is 0:
                 dist[i][j] = max(0, dist[i-1][j])
-            else:
-                charmatch = 1 if str1[i] == str2[j] else 0
-                dist[i][j] = max(dist[i-1][j], dist[i][j-1], dist[i-1][j-1] + charmatch)
-    retdic['length']=dist[len1-1][len2-1]
+            else: 
+                # if dist[][] gets value from insertion or deletion, decrement its value by 1
+                # if str1[i] and str2[j] matches, restore decremented value
+                length1 = verify(dist[i-1][j] - 1)
+                length2 = veryfy(dist[i][j-1] - 1)
+                if str1[i] is str2[j]:
+                    matchLength = (dist[i-1][j-1] + MIN_LCS_LENTH) 
+                    # round up matchLength to multiple of 100
+                    matchLength = matchLength + (MIN_LCS_LENTH - matchLength % MIN_LCS_LENTH) % MIN_LCS_LENTH
+                else:
+                    # in this case, both of the checking string is from 1 index behind,
+                    # so decrement two times since its two times the difference 
+                    # from single insertion or deletion
+                    matchLength = verify(dist[i-1][j-1] - 1)
+                    matchLength = verify(matchLength - 1)
+
+                dist[i][j] = max(length1, length2, matchLength)
+    retdic['length']=dist[len1-1][len2-1] / MIN_LCS_LENTH
+    if retdic['length'] > MIN_LCS_LENTH:
+        retdic['found'] = True
     return retdic
+
+
+def verify(length):
+
 
 
 def levdist(str1, str2):
     len1 = len(str1)
     len2 = len(str2)
     dist = [[0 for x in range(len2)] for y in range(len1)]
-    for i in range(len1):
+    for i in range(len1)
         for j in range(len2):
             if min(i, j) is 0:
                 dist[i][j] = max(i,j)
