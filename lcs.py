@@ -83,7 +83,7 @@ START = 0
 FROM_I = 1
 FROM_J = 2
 FROM_MATCH = 3
-#TODO don't count string that only matches single character
+DEFAULT_DIST = {'length' : 0, 'from' : START, 'cont' : 0}
 def lcs(str1, str2):
     retdic = {
         'length' : 0,
@@ -91,11 +91,13 @@ def lcs(str1, str2):
         }
     len1 = len(str1)
     len2 = len(str2)
-    max_length = 0
-    max_index = (0,0)
+    maxLength = 0
+    bestIndex = (0,0)
     # dist contains a dictionary which consists of length and where lcs come from,
     # and how many character is continously matching
-    dist = [[{'length' : 0, 'from' : START, 'cont' : 0} for x in range(len2)] for y in range(len1)]
+    # if string is not matching, cont variable will turn negative, and too many mismatch will
+    # make the lcs start over from 0
+    dist = [[DEFAULT_DIST for x in range(len2)] for y in range(len1)]
     for i in range(len1):
         for j in range(len2): 
             if j is 0:
@@ -106,30 +108,50 @@ def lcs(str1, str2):
                 length1 = decrement(dist[i-1][j], FROM_I)
                 length2 = decrement(dist[i][j-1], FROM_J)
                 if str1[i] is str2[j]:
-                    matchLength = (dist[i-1][j-1]['length'] + MIN_LCS_LENTH) 
-                    matchLength = matchLength + (MIN_LCS_LENTH - matchLength % MIN_LCS_LENTH) % MIN_LCS_LENTH
+                    matchLength = {'length' : dist[i-1][j-1]['length'] + 1
+                            , 'from' : FROM_MATCH
+                            , 'cont' : max(0, dist[i-1][j-1]) + 1
+                            }
                 else:
                     # in this case, both of the checking string is from 1 index behind,
                     # so decrement two times since its two times the difference 
                     # from single insertion or deletion
-                    matchLength = 0
+                    matchLength = DEFAULT_DIST
 
-                dist[i][j] = getBestLCS(length1, length2. matchLength)
-                # because dist[][] looses its value if there's too much insertion in a row, 
-                if dist[i][j]['length'] > max_length:
-                    max_length = bestlcsLength
-                    max_index = (i, j)
+                dist[i][j] = getBestLCS(length1, length2, matchLength)
+                # because dist[][] looses its value if there's too much insertion 
+                # in a row, I need to store the index to best index 
+                if dist[i][j]['length'] > maxLength:
+                    maxLength = dist[i][j]['length']
+                    bestIndex = (i, j)
 
-    retdic['length']=dist[len1-1][len2-1] / MIN_LCS_LENTH
-    if retdic['length'] > MIN_LCS_LENTH:
-        retdic['found'] = True
-    return retdic
+    printLCS(dist, bestIndex)
 
 
+def printLCS(dist, bestIndex):
+    i = bestIndex[0]
+    j = bestIndex[1]
+    str1 = ""
+    str2 = ""
+    #TODO
+    while True:
+
+        if dist[i][j] is START:
+            break
+
+        if dist[i][j] is FROM_I:
+            
+
+    # print in reversed order
+    print("First LCS: " + str1[::-1])
+    print("Second LCS: " + str2[::-1])
+
+
+# finds the best LCS, using cont value as tiebreaker
 def getBestLCS(dict1, dict2, dict3):
-    l1 = dict1['length']
-    l2 = dict2['length']
-    l3 = dict3['length']
+    l1 = dict1['length'] * 100 + dict1['cont']
+    l2 = dict2['length'] * 100 + dict2['cont']
+    l3 = dict3['length'] * 100 + dict3['cont']
     maxLength = max(l1, l2, l3)
     if l1 is maxLength:
         return dict1
@@ -140,19 +162,25 @@ def getBestLCS(dict1, dict2, dict3):
 
 
 def decrement(dist, src):
-    if dist['cont'] < MIN_MATCH_LENGTH:
-        # cont value, which is number of continous character that match,
-        # must be over MIN_MATCH_LENGTH to be valid lcs
-        return {'length' : 0, 'from' : START, 'cont' : 0}
+    retlen = dist['length']
+    retcont = dist['cont']
+    retsrc = START
+    
+    # cont value, which is number of continous character that match,
+    # must be over MIN_MATCH_LENGTH to be valid lcs    
+    if retcont < MIN_MATCH_LENGTH:
+        return DEFAULT_DIST
 
-    retval = {}
-    dist = dist['length']
-    if dist % MAX_ERR_LENTH <= 1:
-        retval = {'length' : 0, 'from' : START, 'cont' : 0}
-    else:
-        dist = dist - 1
-        retval = {'length' : dist, 'from' : src, 'cont' : 0}
-    return retval
+    # cont will be negative if character is mismatching several times in a row,
+    # and if it will be used to discard lcs that has to many insertions or deletion
+    if retcont <= -MAX_ERR_LENTH:
+        return DEFAULT_DIST
+
+    retlen = retlen - 1
+    retsrc = src
+    retcont = min(retcont, 0) - 1
+    
+    return {'length' : retlen, 'from' : retsrc, 'cont' : retcont}
 
 
 def levdist(str1, str2):
