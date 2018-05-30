@@ -20,7 +20,7 @@ MIN_MATCH_LENGTH = 3
 MIN_LCS_LENTH = 50
 
 # if valid lcs isn't found, skip iteration to speed up process
-SKIP_DIST = 30
+SKIP_DIST = 100
 
 parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
 parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
@@ -60,23 +60,25 @@ def findHairpin(gene):
     maxout = None
     i = 0
     maxlen = 0
-    bestStr = ("", "")
+    bestStr = ("", "", "")
     while i < genelen-WIN_SIZE*2:
         out = lcs(gene[i:i+WIN_SIZE], gene[i+WIN_SIZE:i+WIN_SIZE*2])
         percent = str(i * 100 / genelen) + "%"
         sys.stdout.write("calculating:" + percent + "               \r")
         sys.stdout.flush()
         if out is not None:
-            if maxlen <= max(out[1]-out[0], out[3]-out[2]):
+            if maxlen < max(out[1]-out[0], out[3]-out[2]):
                 maxlen = max(out[1]-out[0], out[3]-out[2])
-                bestStr = (gene[i+out[0]:i+out[1]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]])
-                i = i + 1
+                bestStr = (gene[i+out[0]:i+out[1]], gene[i+out[1]:i+WIN_SIZE+out[2]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]])
+                i = i + min(out[1], out[2])
             else:
-                print("LCS 1: " + bestStr[0])
-                print("LCS 2: " + bestStr[1])
+                print("LCS 1  : " + bestStr[0])
+                print("hairpin: " + bestStr[1])
+                print("LCS 2  : " + bestStr[2])
+                print("")
                 i = i + WIN_SIZE
                 maxlen = 0
-                bestStr = ("","")
+                bestStr = ("","","")
         else:
             i = i + SKIP_DIST
         
