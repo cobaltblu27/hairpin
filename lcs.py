@@ -67,7 +67,7 @@ def findHairpin(gene):
         sys.stdout.write("calculating:" + percent + "               \r")
         sys.stdout.flush()
         if out is not None:
-            if maxlen < max(out[1]-out[0], out[3]-out[2]):
+            if maxlen <= max(out[1]-out[0], out[3]-out[2]):
                 maxlen = max(out[1]-out[0], out[3]-out[2])
                 bestStr = (gene[i+out[0]:i+out[1]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]])
                 i = i + 1
@@ -167,9 +167,10 @@ def LCSindex(str1, str2, dist, bestIndex):
 
 # finds the best LCS, using cont value as tiebreaker
 def getBestLCS(dict1, dict2, dict3):
-    l1 = dict1['length'] * 100 + dict1['cont']
-    l2 = dict2['length'] * 100 + dict2['cont']
-    l3 = dict3['length'] * 100 + dict3['cont']
+    multval = MIN_MATCH_LENGTH + MAX_ERR_LENTH
+    l1 = dict1['length'] * multval + dict1['cont']
+    l2 = dict2['length'] * multval + dict2['cont']
+    l3 = dict3['length'] * multval + dict3['cont']
     maxLength = max(l1, l2, l3)
     if l1 is maxLength:
         return dict1
