@@ -2,6 +2,16 @@
 from docx import Document
 import argparse, os, time, sys
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", dest="filePath", type=str, default="./input/seq.txt", help="path of the file, gets seq_short on default")
+parser.add_argument("-e", dest="maxerr", type=int, default=15, help="maximum changes allowed in lcs")
+parser.add_argument("-l", dest="minlen", type=int, default=50, help="minimum length of lcs(50~100 recommended)")
+parser.add_argument("-m", dest="minmatch", type=int, default=3, help="minimum length of consequtive ")
+
+args = parser.parse_args()
+
+
 # size of the checking window
 WIN_SIZE = 250
 
@@ -9,44 +19,32 @@ WIN_SIZE = 250
 MIN_SIMILARITY = 0.9
 
 # maximum length of addition or deletion
-MAX_ERR_LENTH = 15
+MAX_ERR_LENTH = args.maxerr
 
 # how many character must continuously match to make it valid lcs
-MIN_MATCH_LENGTH = 3
+MIN_MATCH_LENGTH = args.minmatch
 
 # minimum length of lcs string
 # if found string is longer than this value, declare it as
 # hairpin string and print it
-MIN_LCS_LENTH = 50
+MIN_LCS_LENTH = args.minlen
 
 # if valid lcs isn't found, skip iteration to speed up process
 SKIP_DIST = 100
 
-parser = argparse.ArgumentParser(description="usage: [-t] [-f] <filepath> ")
-parser.add_argument("-t", dest="txtInput", default=False, action="store_true")
-parser.add_argument("-f", dest="filePath", type=str)
-
-args = parser.parse_args()
-
-if args.filePath is not None:
-    FILE_DEST = args.filePath 
-else:
-    FILE_DEST = "./input/seq_short.txt" if args.txtInput else "./input/seq_short.docx"
+FILE_DEST = args.filePath 
 
 def main():
     inputType = FILE_DEST[FILE_DEST.rfind('.'):]
     try:
-        if args.txtInput:
-            if inputType != ".txt":
-                print("input file must be txt")
-                os._exit(0)
+        if inputType == ".txt":
             with open(FILE_DEST) as text:
                 gene = text.readlines()[-1]
-        else:
-            if inputType != ".docx":
-                print("input file must be docx")
-                os._exit(0)
+        elif inputType == ".docx":
             gene = Document(FILE_DEST).paragraphs[-1].text
+        else:
+            print("input invalid!")
+            os._exit(0)
     except: 
         print("no such file!")
         os._exit(0)
@@ -57,7 +55,6 @@ def findHairpin(gene):
     genelen = len(gene)
     print("gene length: "+str(genelen))
     start = time.time()
-    maxout = None
     i = 0
     maxlen = 0
     bestStr = ("", "", "")
@@ -84,7 +81,6 @@ def findHairpin(gene):
         
     end = time.time()
     print("time spent:" + str(round(end-start, 2)))
-    print(maxout)
 
 # getstring similarity based on levenshtein distance
 # similar to lcs algorithm
