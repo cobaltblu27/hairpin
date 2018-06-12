@@ -2,15 +2,17 @@
 from docx import Document
 import argparse, os, time, sys
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", dest="filePath", type=str, default="./input/seq.txt", help="path of the file, gets seq_short on default")
 parser.add_argument("-e", dest="maxerr", type=int, default=15, help="maximum changes allowed in lcs")
 parser.add_argument("-l", dest="minlen", type=int, default=50, help="minimum length of lcs(50~100 recommended)")
 parser.add_argument("-m", dest="minmatch", type=int, default=3, help="minimum length of consequtive ")
+parser.add_argument("-s", dest="save", type=str, default=None, help="store result in filepath")
 
 args = parser.parse_args()
 
+# where output is stored in, show result on terminal if None
+OUT_PATH = args.save
 
 # size of the checking window
 WIN_SIZE = 250
@@ -34,6 +36,12 @@ SKIP_DIST = 100
 
 FILE_DEST = args.filePath 
 
+# main() will print out all the found lcs based on given parameters and input text file.
+# also, insertion and deletion will be shown on second string of lcs with markdown syntax.
+
+# **insertion**
+# ~~deletion~~
+
 def main():
     inputType = FILE_DEST[FILE_DEST.rfind('.'):]
     try:
@@ -45,6 +53,8 @@ def main():
         else:
             print("input invalid!")
             os._exit(0)
+        if OUT_PATH is not None and os.path.exists(OUT_PATH):
+            os.remove(OUT_PATH)
     except: 
         print("no such file!")
         os._exit(0)
@@ -66,13 +76,10 @@ def findHairpin(gene):
         if out is not None:
             if maxlen < max(out[1]-out[0], out[3]-out[2]):
                 maxlen = max(out[1]-out[0], out[3]-out[2])
-                bestStr = (gene[i+out[0]:i+out[1]], gene[i+out[1]:i+WIN_SIZE+out[2]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]])
+                bestStr = (gene[i+out[0]+1:i+out[1]], gene[i+out[1]:i+WIN_SIZE+out[2]+1], gene[i+WIN_SIZE+out[2]+1:i+WIN_SIZE+out[3]], out[4])
                 i = i + min(out[1], out[2])
             else:
-                print("LCS 1  : " + bestStr[0])
-                print("hairpin: " + bestStr[1])
-                print("LCS 2  : " + bestStr[2])
-                print("")
+                printlcs(bestStr);
                 i = i + WIN_SIZE
                 maxlen = 0
                 bestStr = ("","","")
@@ -81,6 +88,21 @@ def findHairpin(gene):
         
     end = time.time()
     print("time spent:" + str(round(end-start, 2)))
+
+def printlcs(bestStr):
+    if OUT_PATH is None:
+        print("LCS 1  : " + bestStr[0])
+        print("hairpin: " + bestStr[1])
+        print("LCS 2  : " + bestStr[2])
+        print("change : " + bestStr[3])
+        print("")
+    else:
+        with open(OUT_PATH,"a") as outfile:
+            print >> outfile, "LCS 1  : " + bestStr[0]
+            print >> outfile, "hairpin: " + bestStr[1]
+            print >> outfile, "LCS 2  : " + bestStr[2]
+            print >> outfile, "change : " + bestStr[3]
+            print >> outfile, ""
 
 # getstring similarity based on levenshtein distance
 # similar to lcs algorithm
@@ -107,10 +129,12 @@ def lcs(str1, str2):
     len2 = len(str2)
     maxLength = 0
     bestIndex = (0,0)
+
     # dist contains a dictionary which consists of length and where lcs come from,
     # and how many character is continously matching
     # if string is not matching, cont variable will turn negative, and too many mismatch will
     # make the lcs start over from 0
+
     dist = [[DEFAULT_DIST for x in range(len2)] for y in range(len1)]
     for i in range(len1):
         for j in range(len2): 
@@ -144,23 +168,54 @@ def lcs(str1, str2):
     else:
         return None
 
+MATCH = 0
+INSERT = 1
+DELETE = 2
 def LCSindex(str1, str2, dist, bestIndex):
     i = bestIndex[0]
     j = bestIndex[1]
+    # state will be used to mark string for deletion and insertion
+    # changestr will store formatted string
+    state = MATCH
+    changestr = ""
     while True:
         lcsFrom = dist[i][j]['from']
         if lcsFrom == FROM_I:
+            if state == MATCH:
+                changestr = changestr + "**"
+            elif state == DELETE:
+                changestr = changestr + "~~**"
+            changestr = changestr + str1[i]
+            state = INSERT
+
             i = i - 1
         elif lcsFrom == FROM_J:
+            if state == MATCH:
+                changestr = changestr + "~~"
+            elif state == INSERT:
+                changestr = changestr + "**~~"
+            changestr = changestr + str2[j]
+            state = DELETE
+
             j = j - 1
         elif lcsFrom == FROM_MATCH:
+            if state == INSERT:
+                changestr = changestr + "**"
+            elif state == DELETE:
+                changestr = changestr + "~~"
+            changestr = changestr + str2[j]
+            state = MATCH
+
             i = i - 1
             j = j - 1
-
-        if dist[i][j]['from'] is START:
+        elif dist[i][j]['from'] is START:
+            changestr = changestr + str2[j]
             break
 
-    return(i, bestIndex[0] + 1, j, bestIndex[1] + 1)
+    changestr = changestr[::-1]
+    changestr = changestr[1:]
+
+    return(i, bestIndex[0] + 1, j, bestIndex[1] + 1, changestr)
 
 
 # finds the best LCS, using cont value as tiebreaker
