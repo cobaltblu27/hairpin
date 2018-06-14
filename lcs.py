@@ -76,7 +76,7 @@ def findHairpin(gene):
         if out is not None:
             if maxlen < max(out[1]-out[0], out[3]-out[2]):
                 maxlen = max(out[1]-out[0], out[3]-out[2])
-                bestStr = (gene[i+out[0]+1:i+out[1]], gene[i+out[1]:i+WIN_SIZE+out[2]+1], gene[i+WIN_SIZE+out[2]+1:i+WIN_SIZE+out[3]], out[4])
+                bestStr = (gene[i+out[0]:i+out[1]], gene[i+out[1]:i+WIN_SIZE+out[2]], gene[i+WIN_SIZE+out[2]:i+WIN_SIZE+out[3]], out[4])
                 i = i + min(out[1], out[2])
             else:
                 printlcs(bestStr);
@@ -146,10 +146,16 @@ def lcs(str1, str2):
                 length1 = decrement(dist[i-1][j], FROM_I)
                 length2 = decrement(dist[i][j-1], FROM_J)
                 if str1[i] is str2[j]:
-                    matchLength = {'length' : dist[i-1][j-1]['length'] + 1
-                            , 'from' : FROM_MATCH
-                            , 'cont' : max(0, dist[i-1][j-1]['cont']) + 1
-                            }
+                    if dist[i-1][j-1]['length'] > 0:
+                        matchLength = {'length' : dist[i-1][j-1]['length'] + 1
+                                , 'from' : FROM_MATCH
+                                , 'cont' : max(0, dist[i-1][j-1]['cont']) + 1
+                                }
+                    else:
+                        matchLength = {'length' : 1
+                                , 'from' : START
+                                , 'cont' : 1
+                                }
                 else:
                     # in this case, both of the checking string is from 1 index behind,
                     # so decrement two times since its two times the difference 
@@ -184,7 +190,7 @@ def LCSindex(str1, str2, dist, bestIndex):
             if state == MATCH:
                 changestr = changestr + "**"
             elif state == DELETE:
-                changestr = changestr + "~~**"
+                changestr = changestr + "~~'**"
             changestr = changestr + str1[i]
             state = INSERT
 
@@ -212,10 +218,7 @@ def LCSindex(str1, str2, dist, bestIndex):
             changestr = changestr + str2[j]
             break
 
-    changestr = changestr[::-1]
-    changestr = changestr[1:]
-
-    return(i, bestIndex[0] + 1, j, bestIndex[1] + 1, changestr)
+    return(i, bestIndex[0] , j, bestIndex[1] , changestr[::-1])
 
 
 # finds the best LCS, using cont value as tiebreaker
