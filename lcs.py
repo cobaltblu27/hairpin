@@ -190,7 +190,7 @@ def LCSindex(str1, str2, dist, bestIndex):
             if state == MATCH:
                 changestr = changestr + "**"
             elif state == DELETE:
-                changestr = changestr + "~~'**"
+                changestr = changestr + "~~**"
             changestr = changestr + str1[i]
             state = INSERT
 
