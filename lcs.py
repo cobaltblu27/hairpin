@@ -21,7 +21,7 @@ WIN_SIZE = 250
 MIN_SIMILARITY = 0.9
 
 # maximum length of addition or deletion
-MAX_ERR_LENTH = args.maxerr
+MAX_ERR_LENGTH = args.maxerr
 
 # how many character must continuously match to make it valid lcs
 MIN_MATCH_LENGTH = args.minmatch
@@ -29,7 +29,7 @@ MIN_MATCH_LENGTH = args.minmatch
 # minimum length of lcs string
 # if found string is longer than this value, declare it as
 # hairpin string and print it
-MIN_LCS_LENTH = args.minlen
+MIN_LCS_LENGTH = args.minlen
 
 # if valid lcs isn't found, skip iteration to speed up process
 SKIP_DIST = 100
@@ -169,7 +169,7 @@ def lcs(str1, str2):
                     maxLength = dist[i][j]['length']
                     bestIndex = (i, j)
 
-    if maxLength > MIN_LCS_LENTH:
+    if maxLength > MIN_LCS_LENGTH:
         return LCSindex(str1, str2, dist, bestIndex)
     else:
         return None
@@ -223,7 +223,7 @@ def LCSindex(str1, str2, dist, bestIndex):
 
 # finds the best LCS, using cont value as tiebreaker
 def getBestLCS(dict1, dict2, dict3):
-    multval = MIN_MATCH_LENGTH + MAX_ERR_LENTH
+    multval = MIN_MATCH_LENGTH + MAX_ERR_LENGTH
     l1 = dict1['length'] * multval + dict1['cont']
     l2 = dict2['length'] * multval + dict2['cont']
     l3 = dict3['length'] * multval + dict3['cont']
@@ -248,7 +248,7 @@ def decrement(dist, src):
 
     # cont will be negative if character is mismatching several times in a row,
     # and if it will be used to discard lcs that has to many insertions or deletion
-    if retcont <= -MAX_ERR_LENTH:
+    if retcont <= -MAX_ERR_LENGTH:
         return DEFAULT_DIST
 
     retlen = retlen - 1
