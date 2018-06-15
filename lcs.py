@@ -87,7 +87,7 @@ def findHairpin(gene):
             i = i + SKIP_DIST
         
     end = time.time()
-    print("time spent:" + str(round(end-start, 2)))
+    print("time spent:  " + str(round(end-start, 2)))
 
 def printlcs(bestStr):
     if OUT_PATH is None:
@@ -98,11 +98,11 @@ def printlcs(bestStr):
         print("")
     else:
         with open(OUT_PATH,"a") as outfile:
-            print >> outfile, "LCS 1  : " + bestStr[0]
-            print >> outfile, "hairpin: " + bestStr[1]
-            print >> outfile, "LCS 2  : " + bestStr[2]
-            print >> outfile, "change : " + bestStr[3]
-            print >> outfile, ""
+            print >> outfile, "LCS 1  : " + bestStr[0] + "  "
+            print >> outfile, "hairpin: " + bestStr[1] + "  "
+            print >> outfile, "LCS 2  : " + bestStr[2] + "  "
+            print >> outfile, "change : " + bestStr[3] + "  "
+            print >> outfile, "  "
 
 # getstring similarity based on levenshtein distance
 # similar to lcs algorithm
