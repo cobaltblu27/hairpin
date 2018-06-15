@@ -1,18 +1,18 @@
-Hairpin structure finder implemented with LCS
-
-usage: lcs.py [-h] [-f FILEPATH] [-e MAXERR] [-l MINLEN] [-m MINMATCH]
-              [-s SAVE]
-
-optional arguments:
-    -h, --help   show this help message and exit
-    -f FILEPATH  path of the file, gets seq_short on default
-    -e MAXERR    maximum changes allowed in lcs
-    -l MINLEN    minimum length of lcs(50~100 recommended)
-    -m MINMATCH  minimum length of consequtive
-    -s SAVE      store result in filepath
-
-output example:
-\>./lcs -f input/seq.txt
+Hairpin structure finder implemented with LCS  
+  
+usage: lcs.py [-h] [-f FILEPATH] [-e MAXERR] [-l MINLEN] [-m MINMATCH]  
+              [-s SAVE]  
+  
+optional arguments:  
+    -h, --help   show this help message and exit  
+    -f FILEPATH  path of the file, gets seq_short on default  
+    -e MAXERR    maximum changes allowed in lcs  
+    -l MINLEN    minimum length of lcs(50~100 recommended)  
+    -m MINMATCH  minimum length of consequtive  
+    -s SAVE      store result in filepath  
+  
+output example:  
+\>./lcs -f input/seq.txt  
 gene length: 100586  
 LCS 1  : TAGATGATGATGTTATACGCGTTCTTCTGGCCGCTATTGGTGGAGGATGTAGTACTCCTCTTTTTTTAATAGTGACATAGGTCATCCTAGAGGCGGATTCGGACTCGAAGTTTGTGTTTGACGGGGGAATGTTGAGTGACCAGTCC  
 hairpin: CCTGGAACATGAATCACAAATGGAGAGCTAACTAATCTATATCACTTTATCTTGCTAATGCAAAGGCCAAATGCATAAGTAGTTCAAACCCGGAAAATAATCTACTTTTGG
